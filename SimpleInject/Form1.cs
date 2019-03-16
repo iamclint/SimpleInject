@@ -10,11 +10,14 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.IO;
+using System.Windows;
+
 
 namespace SimpleInject
 {
     public partial class SimpleInject : Form
     {
+ 
 
         [DllImport("libinj.dll", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool Is32Bit(int process_id);
@@ -32,13 +35,16 @@ namespace SimpleInject
         public SimpleInject()
         {
             InitializeComponent();
-            loadSettings();
+            LoadSettings();
             UpdateThread_DoWork(null, null); // initial open don't use background worker its slower at updating the list due to invoking.
             UpdateThread = new BackgroundWorker();
             UpdateThread.DoWork += new System.ComponentModel.DoWorkEventHandler(this.UpdateThread_DoWork);
+            
         }
 
-        private void loadSettings()
+
+
+        private void LoadSettings()
         {
             DllX86.Text =  Properties.Settings.Default.X86;
             DllX64.Text = Properties.Settings.Default.X64;
@@ -131,9 +137,19 @@ namespace SimpleInject
             }
             if (hasChanged)
                 if (ProcessList.InvokeRequired)
-                    ProcessList.Invoke(new MethodInvoker(delegate { ProcessList.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent); }));
+                {
+                    ProcessList.Invoke(new MethodInvoker(delegate {
+                        ProcessList.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+                        ProcessList.Columns[3].Width = -2;
+                    }));
+                }
                 else
+                {
                     ProcessList.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+                    ProcessList.Columns[3].Width = -2;
+                }
+
+
         }
 
         public bool filterProcess(Process p)
@@ -315,6 +331,42 @@ namespace SimpleInject
             int process_id = int.Parse(ProcessList.SelectedItems[0].SubItems[GetColumnIndex("id")].Text);
             Process p = Process.GetProcessById(process_id);
             p.Kill();
+        }
+
+        private void ProcessList_DrawColumnHeader(object sender,
+                                                  DrawListViewColumnHeaderEventArgs e)
+        {
+            e.Graphics.FillRectangle(Brushes.DarkSlateBlue, e.Bounds);
+            e.Graphics.DrawLine(Pens.Gray, new Point(e.Bounds.Right-2, e.Bounds.Top+4), new Point(e.Bounds.Right-2, e.Bounds.Bottom-4));
+            //e.ForeColor = Color.White;
+            using (StringFormat sf = new StringFormat())
+            {
+                // Store the column text alignment, letting it default
+                // to Left if it has not been set to Center or Right.
+                switch (e.Header.TextAlign)
+                {
+                    case HorizontalAlignment.Center:
+                        sf.Alignment = StringAlignment.Center;
+                        break;
+                    case HorizontalAlignment.Right:
+                        sf.Alignment = StringAlignment.Far;
+                        break;
+                }
+                sf.Alignment = StringAlignment.Near;
+
+                // Draw the header text.
+                using (Font headerFont =
+                            new Font("Helvetica", 9, FontStyle.Bold))
+                {
+                    e.Graphics.DrawString(e.Header.Text, headerFont, Brushes.White, e.Bounds.X+4, e.Bounds.Y+3, sf);
+                }
+            }
+           // e.DrawText(TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
+        }
+        private void ProcessList_DrawItem(object sender,
+                                DrawListViewItemEventArgs e)
+        {
+            e.DrawDefault = true;
         }
     }
 }
