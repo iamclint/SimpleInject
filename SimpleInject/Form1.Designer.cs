@@ -225,7 +225,7 @@
             // ProcessListTmr
             // 
             this.ProcessListTmr.Enabled = true;
-            this.ProcessListTmr.Interval = 500;
+            this.ProcessListTmr.Interval = 1500;
             this.ProcessListTmr.Tick += new System.EventHandler(this.ProcessListTmr_Tick);
             // 
             // hideEmptyTitles
@@ -267,6 +267,8 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SimpleInject";
             this.Text = "Simple Inject";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SimpleInject_Closing);
+            this.Load += new System.EventHandler(this.SimpleInject_Load);
             this.lvContext.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();

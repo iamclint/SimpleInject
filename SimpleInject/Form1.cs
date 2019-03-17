@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.IO;
-using System.Windows;
+
 
 
 namespace SimpleInject
@@ -42,8 +39,6 @@ namespace SimpleInject
             
         }
 
-
-
         private void LoadSettings()
         {
             DllX86.Text =  Properties.Settings.Default.X86;
@@ -66,14 +61,17 @@ namespace SimpleInject
             return true;
         }
 
+        static int updateCount = 0;
         private void UpdateThread_DoWork(object sender, DoWorkEventArgs e)
         {
+            updateCount += 1;
 
             bool hasChanged = false;
-
+            List<int> IDarr = new List<int>();
             foreach (Process p in Process.GetProcesses())
             {
-                bool isExisting=false;
+                IDarr.Add(p.Id);
+                bool isExisting = false;
                 bool isMatching = filterProcess(p);
 
                 if (ProcessList.InvokeRequired)
@@ -84,10 +82,15 @@ namespace SimpleInject
                 if (hideEmptyTitles.Checked && p.MainWindowTitle.Trim() == "")
                     isMatching = false;
 
+                if (p.ProcessName.ToLower() == "svchost")
+                    isMatching = false;
+
                 if (!isExisting && isMatching)
                 {
-                    ListViewItem lvi = new ListViewItem(new[] { p.ProcessName, p.MainWindowTitle, p.Id.ToString(), (Is32Bit(p.Id)?"X86":"X64") });
-                    lvi.Name = p.Id.ToString(); //set the key of the item here
+                    ListViewItem lvi = new ListViewItem(new[] { p.ProcessName, p.MainWindowTitle, p.Id.ToString(), (Is32Bit(p.Id) ? "X86" : "X64") })
+                    {
+                        Name = p.Id.ToString() //set the key of the item here
+                    };
                     if (ProcessList.InvokeRequired)
                         ProcessList.Invoke(new MethodInvoker(delegate
                         {
@@ -130,11 +133,31 @@ namespace SimpleInject
                             {
                                 ProcessList.Items.RemoveAt(ProcessList.Items[p.Id.ToString()].Index);
                             }));
-                        else 
+                        else
                             ProcessList.Items.RemoveAt(ProcessList.Items[p.Id.ToString()].Index);
                     }
                 }
             }
+
+            if (updateCount >= 3)
+            { 
+                if (ProcessList.InvokeRequired)
+                {
+                    ProcessList.Invoke(new MethodInvoker(delegate
+                    {
+                        foreach (ListViewItem lvi in ProcessList.Items)
+                        {
+                            int pid = int.Parse(lvi.SubItems[GetColumnIndex("id")].Text);
+                            if (!IDarr.Contains<int>(pid))
+                            {
+                                ProcessList.Items.RemoveAt(lvi.Index);
+                            }
+                        }
+                    }));
+                }
+                updateCount = 0;
+            }
+
             if (hasChanged)
                 if (ProcessList.InvokeRequired)
                 {
@@ -162,7 +185,7 @@ namespace SimpleInject
                     return true;
                 if (p.MainWindowTitle.ToLower().IndexOf(filterStr) >= 0)
                     return true;
-            }   
+            }
             return false;
         }
 
@@ -367,6 +390,16 @@ namespace SimpleInject
                                 DrawListViewItemEventArgs e)
         {
             e.DrawDefault = true;
+        }
+
+        private void SimpleInject_Load(object sender, EventArgs e)
+        {
+
+        }
+        private void SimpleInject_Closing(object sender, FormClosingEventArgs e)
+        {
+            NotifyMessage.Icon = null;
+            NotifyMessage.Dispose();
         }
     }
 }
