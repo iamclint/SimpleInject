@@ -27,8 +27,7 @@ namespace SimpleInject
         private ColumnHeader SortingColumn = null;
 
         private bool[] sortColAsc;
-
-
+   
         public SimpleInject()
         {
             InitializeComponent();
@@ -325,7 +324,7 @@ namespace SimpleInject
             }
             if (ld.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                DllX86.Text = ld.FileName;
+                DllX64.Text = ld.FileName;
                 Properties.Settings.Default.X64 = ld.FileName;
                 Properties.Settings.Default.Save();
             }
